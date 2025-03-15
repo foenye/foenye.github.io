@@ -1,0 +1,4 @@
+baseURL = 'https://foenye.github.io/'
+languageCode = 'en-us'
+title = 'Foenye blog'
+theme = 'ananke'
