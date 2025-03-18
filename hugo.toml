@@ -2,3 +2,6 @@ baseURL = 'https://foenye.github.io/'
 languageCode = 'en-us'
 title = 'Foenye blog'
 theme = 'ananke'
+[caches]
+    [caches.images]
+        dir = ':cacheDir/images'
