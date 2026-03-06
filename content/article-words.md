@@ -13,9 +13,9 @@ title = 'Article Words'
    - T-R-U-C
 - tor
    - T-O-R
-- instructor
-- instructor
-- instructor
+- We are your instructors
+- We are your instructors
+- We are your instructors
 
 ### thrill
 n.
@@ -27,6 +27,6 @@ v.
    - T-H-R-I
 - ll
    - L-L
-- thrill
-- thrill
-- thrill
+- We are thrilled to guide you on your journey into the world of Web3.
+- We are thrilled to guide you on your journey into the world of Web3.
+- We are thrilled to guide you on your journey into the world of Web3.
