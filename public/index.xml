@@ -2,11 +2,18 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Foenye blog</title>
-    <link>https://foenye.github.io/</link>
+    <link>http://localhost:1313/</link>
     <description>Recent content on Foenye blog</description>
     <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate></lastBuildDate>
-    <atom:link href="https://foenye.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 06 Mar 2026 15:00:09 +0800</lastBuildDate>
+    <atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Article Words</title>
+      <link>http://localhost:1313/article-words/</link>
+      <pubDate>Fri, 06 Mar 2026 15:00:09 +0800</pubDate>
+      <guid>http://localhost:1313/article-words/</guid>
+      <description>&lt;h3 id=&#34;instructor&#34;&gt;instructor&lt;/h3&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;noun.&#xA;&lt;ul&gt;&#xA;&lt;li&gt;教练，导师；大学讲师&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;/li&gt;&#xA;&lt;li&gt;ins&#xA;&lt;ul&gt;&#xA;&lt;li&gt;I-N-S&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;/li&gt;&#xA;&lt;li&gt;truc&#xA;&lt;ul&gt;&#xA;&lt;li&gt;T-R-U-C&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;/li&gt;&#xA;&lt;li&gt;tor&#xA;&lt;ul&gt;&#xA;&lt;li&gt;T-O-R&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;/li&gt;&#xA;&lt;li&gt;instructor. instructors.&lt;/li&gt;&#xA;&lt;li&gt;We are your instructors.&lt;/li&gt;&#xA;&lt;li&gt;We are your instructors.&lt;/li&gt;&#xA;&lt;li&gt;We are your instructors.&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;h3 id=&#34;thrill&#34;&gt;thrill&lt;/h3&gt;&#xA;&lt;p&gt;n.&#xA;兴奋，激动；&lt;/p&gt;&#xA;&lt;p&gt;v.&#xA;使（某人）非常兴奋，非常激动；&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;thrill&#xA;&lt;ul&gt;&#xA;&lt;li&gt;T-H-R-I-L-L&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;/li&gt;&#xA;&lt;li&gt;thrill&lt;/li&gt;&#xA;&lt;li&gt;I thrill to guide you do it.&lt;/li&gt;&#xA;&lt;li&gt;I thrill to guide you do it.&lt;/li&gt;&#xA;&lt;li&gt;I thrill to guide you do it.&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;h3 id=&#34;guide&#34;&gt;guide&lt;/h3&gt;&#xA;&lt;p&gt;v.&#xA;带领，引导（某人至某地）；任向导；指导，影响；解释，阐明&#xA;n.&#xA;指南，手册；导游，向导；准则，指针&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;guide&#xA;&lt;ul&gt;&#xA;&lt;li&gt;g-u-i-d-e&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;/li&gt;&#xA;&lt;li&gt;guide.&lt;/li&gt;&#xA;&lt;li&gt;We are thrilled to guide you.&lt;/li&gt;&#xA;&lt;li&gt;We are thrilled to guide you.&lt;/li&gt;&#xA;&lt;li&gt;We are thrilled to guide you.&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;h3 id=&#34;journey&#34;&gt;journey&lt;/h3&gt;&#xA;&lt;p&gt;n.&#xA;旅行，旅程；历程，过程&lt;/p&gt;</description>
+    </item>
   </channel>
 </rss>
