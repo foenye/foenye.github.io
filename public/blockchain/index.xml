@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Blockchains on Foenye blog</title>
+    <link>http://localhost:1313/blockchain/</link>
+    <description>Recent content in Blockchains on Foenye blog</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <atom:link href="http://localhost:1313/blockchain/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title></title>
+      <link>http://localhost:1313/blockchain/basics/article-words/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/blockchain/basics/article-words/</guid>
+      <description>&lt;h4 id=&#34;welcome-to-blockchain-basics-your-first-step-into-web3&#34;&gt;Welcome to Blockchain Basics: Your First Step into Web3&lt;/h4&gt;&#xA;&lt;p&gt;Welcome to the Blockchain Basics course on Cyfrin Updraft! We are your instructors, Ciara Nightingale and Patrick Collins, and we are thrilled to guide you on your journey into the world of Web3.&lt;/p&gt;&#xA;&lt;p&gt;Our goal with this course is simple but ambitious: to take you from a complete beginner with zero prior knowledge to a competent Web3 professional, ready to tackle the next steps in your career. This course is the essential foundation for anyone looking to enter this exciting and rapidly growing industry.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>
