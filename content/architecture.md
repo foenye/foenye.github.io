@@ -33,22 +33,22 @@ title = 'Architecture'
 
 ```mermaid
 graph TD
-    User[用户 (Client/Web/App)] -->|GraphQL Query/Mutation| Gateway[Apollo Router (Gateway)]
+    User["用户 (Client/Web/App)"] -->|GraphQL Query/Mutation| Gateway["Apollo Router (Gateway)"]
     
     subgraph "Microservices Cluster"
-        Gateway -->|Sub-query| AuthModule[认证服务 (Auth Service)]
-        Gateway -->|Sub-query| MemberModule[用户服务 (Member Service)]
-        Gateway -->|Sub-query| MerchantModule[商家服务 (Merchant Service)]
+        Gateway -->|Sub-query| AuthModule["认证服务 (Auth Service)"]
+        Gateway -->|Sub-query| MemberModule["用户服务 (Member Service)"]
+        Gateway -->|Sub-query| MerchantModule["商家服务 (Merchant Service)"]
         
-        AuthModule -.->|Issue Token| Redis[(Redis Cache)]
-        MerchantModule -.->|Publish Event| Kafka[Message Broker (Kafka)]
+        AuthModule -.->|Issue Token| Redis[("Redis Cache")]
+        MerchantModule -.->|Publish Event| Kafka["Message Broker (Kafka)"]
         MemberModule -.->|Consume Event| Kafka
     end
     
     subgraph "Persistence Layer"
-        AuthModule --> DB_Auth[(Auth DB)]
-        MemberModule --> DB_Member[(Member DB)]
-        MerchantModule --> DB_Merchant[(Merchant DB)]
+        AuthModule --> DB_Auth[("Auth DB")]
+        MemberModule --> DB_Member[("Member DB")]
+        MerchantModule --> DB_Merchant[("Merchant DB")]
     end
 ```
 

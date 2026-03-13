@@ -242,22 +242,22 @@
 </ul>
 <h3 id="12-系统架构图-system-context">1.2 系统架构图 (System Context)</h3>
 <pre tabindex="0"><code class="language-mermaid" data-lang="mermaid">graph TD
-    User[用户 (Client/Web/App)] --&gt;|GraphQL Query/Mutation| Gateway[Apollo Router (Gateway)]
+    User[&#34;用户 (Client/Web/App)&#34;] --&gt;|GraphQL Query/Mutation| Gateway[&#34;Apollo Router (Gateway)&#34;]
     
     subgraph &#34;Microservices Cluster&#34;
-        Gateway --&gt;|Sub-query| AuthModule[认证服务 (Auth Service)]
-        Gateway --&gt;|Sub-query| MemberModule[用户服务 (Member Service)]
-        Gateway --&gt;|Sub-query| MerchantModule[商家服务 (Merchant Service)]
+        Gateway --&gt;|Sub-query| AuthModule[&#34;认证服务 (Auth Service)&#34;]
+        Gateway --&gt;|Sub-query| MemberModule[&#34;用户服务 (Member Service)&#34;]
+        Gateway --&gt;|Sub-query| MerchantModule[&#34;商家服务 (Merchant Service)&#34;]
         
-        AuthModule -.-&gt;|Issue Token| Redis[(Redis Cache)]
-        MerchantModule -.-&gt;|Publish Event| Kafka[Message Broker (Kafka)]
+        AuthModule -.-&gt;|Issue Token| Redis[(&#34;Redis Cache&#34;)]
+        MerchantModule -.-&gt;|Publish Event| Kafka[&#34;Message Broker (Kafka)&#34;]
         MemberModule -.-&gt;|Consume Event| Kafka
     end
     
     subgraph &#34;Persistence Layer&#34;
-        AuthModule --&gt; DB_Auth[(Auth DB)]
-        MemberModule --&gt; DB_Member[(Member DB)]
-        MerchantModule --&gt; DB_Merchant[(Merchant DB)]
+        AuthModule --&gt; DB_Auth[(&#34;Auth DB&#34;)]
+        MemberModule --&gt; DB_Member[(&#34;Member DB&#34;)]
+        MerchantModule --&gt; DB_Merchant[(&#34;Merchant DB&#34;)]
     end
 </code></pre><hr>
 <h2 id="2-业务流程与技术实现">2. 业务流程与技术实现</h2>
