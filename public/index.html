@@ -148,7 +148,7 @@
 <ul>
 <li><strong>极简建模体验</strong>: 由于使用了 GraphQL 特性，<strong>每个模块的模型设计保持极致简单</strong>。服务间仅需引用关联对象的 <strong>ID</strong>（如商家服务仅存 <code>ownerId</code>），无需在代码或数据库层面处理复杂的跨服务关联。数据的聚合与拼装完全由 GraphQL 层自动处理，显著降低了开发心智负担与维护成本。</li>
 <li><strong>聚合根（Aggregate Root）</strong> 保证业务操作的原子性。</li>
-<li><strong>领域事件（Domain Events）</strong> 实现微服务间的解耦与最终一致性（如：商家服务 -&gt; 通知服务）。</li>
+<li><strong>业务事件（Domain Events）</strong> 实现微服务间的解耦与最终一致性（如：商家服务 -&gt; 通知服务）。</li>
 <li><strong>Saga 模式</strong>: 处理跨服务的长事务（如：商家入驻涉及账号创建、权限分配、支付签约）。</li>
 </ul>
 </li>
