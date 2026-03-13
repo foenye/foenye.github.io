@@ -116,7 +116,87 @@ election committees 选举委员会 While often efficient 尽管常常高效的"
 
       
     
-	
+	<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.esm.min.mjs';
+    
+    document.addEventListener("DOMContentLoaded", function() {
+        
+        var mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+        
+        
+        if (mermaidBlocks.length === 0) return;
+
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+
+        var nodes = [];
+        mermaidBlocks.forEach(function(block) {
+            var pre = block.parentElement;
+            if (pre && pre.tagName === 'PRE') {
+                var div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.parentNode.replaceChild(div, pre);
+                nodes.push(div);
+            }
+        });
+
+        
+        mermaid.run({
+            nodes: nodes
+        });
+    });
+</script>
+
+<style>
+     
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 2rem 0;
+        font-size: 0.95rem;
+        border: 1px solid #e5e7eb;
+    }
+    
+    thead {
+        background-color: #f3f4f6;
+    }
+    
+    th, td {
+        padding: 0.75rem 1rem;
+        text-align: left;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    th {
+        font-weight: 600;
+        color: #111827;
+        border-bottom: 2px solid #e5e7eb;
+        white-space: nowrap;
+    }
+    
+    td {
+        color: #374151;
+    }
+    
+    tr:last-child td {
+        border-bottom: none;
+    }
+    
+    tr:nth-child(even) {
+        background-color: #f9fafb;
+    }
+
+     
+    .mermaid {
+        display: flex;
+        justify-content: center;
+        margin: 2rem 0;
+        background-color: white;
+        padding: 1rem;
+        border-radius: 0.5rem;
+    }
+</style>
+
   </head><body class="ma0 avenir bg-near-white production">
 
     
