@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>天平系统集成架构文档 | Foenye blog</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="">
+    <meta name="generator" content="Hugo 0.145.0">
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+    
+
+    
+<link rel="stylesheet" href="/ananke/css/main.min.d05fb5f317fcf33b3a52936399bdf6f47dc776516e1692e412ec7d76f4a5faa2.css" >
+
+
+
+
+    
+
+    
+      
+
+    
+
+    
+    
+      <link href="/xshopee/index.xml" rel="alternate" type="application/rss+xml" title="Foenye blog" />
+      <link href="/xshopee/index.xml" rel="feed" type="application/rss+xml" title="Foenye blog" />
+      
+    
+
+    
+      <link rel="canonical" href="https://foenye.github.io/xshopee/">
+    
+
+    <meta property="og:url" content="https://foenye.github.io/xshopee/">
+  <meta property="og:site_name" content="Foenye blog">
+  <meta property="og:title" content="天平系统集成架构文档">
+  <meta property="og:description" content="天平系统集成架构文档 初步草案版本。当前文档用于统一业务边界、版本差异和开发架构方向，后续仍需结合需求接口调研、原型评审和开发落地继续修订。
+文档导航 基线版本业务、开发文档
+描述当前优先落地的基线版本：一个店铺同一时刻一个运营，订单按店铺当前合作关系进入托管、履约、结算和调整流程。
+高级版本差异文档
+描述相对基线版本的高级差异：一个店铺可按经营品类、商品或人工规则分配给多个运营，并引入责任片段、拆单编排、多运营履约和片段级内部清分。
+开发架构文档
+描述后端开发架构草案：模块化单体起步，事件驱动交互，Saga 命令消息，GraphQL &#43; DataLoader 查询聚合，PostgreSQL、Redis、Kafka、Temporal 等技术选型。架构文档放在最后，业务边界以基线版本和高级版本文档为准。
+阅读顺序 建议先读基线版本，再读高级版本差异，最后读开发架构文档。">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="website">
+
+  <meta itemprop="name" content="天平系统集成架构文档">
+  <meta itemprop="description" content="天平系统集成架构文档 初步草案版本。当前文档用于统一业务边界、版本差异和开发架构方向，后续仍需结合需求接口调研、原型评审和开发落地继续修订。
+文档导航 基线版本业务、开发文档
+描述当前优先落地的基线版本：一个店铺同一时刻一个运营，订单按店铺当前合作关系进入托管、履约、结算和调整流程。
+高级版本差异文档
+描述相对基线版本的高级差异：一个店铺可按经营品类、商品或人工规则分配给多个运营，并引入责任片段、拆单编排、多运营履约和片段级内部清分。
+开发架构文档
+描述后端开发架构草案：模块化单体起步，事件驱动交互，Saga 命令消息，GraphQL &#43; DataLoader 查询聚合，PostgreSQL、Redis、Kafka、Temporal 等技术选型。架构文档放在最后，业务边界以基线版本和高级版本文档为准。
+阅读顺序 建议先读基线版本，再读高级版本差异，最后读开发架构文档。">
+  <meta itemprop="datePublished" content="2026-05-13T00:00:00+08:00">
+  <meta itemprop="dateModified" content="2026-05-13T00:00:00+08:00">
+  <meta itemprop="wordCount" content="16">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="天平系统集成架构文档">
+  <meta name="twitter:description" content="天平系统集成架构文档 初步草案版本。当前文档用于统一业务边界、版本差异和开发架构方向，后续仍需结合需求接口调研、原型评审和开发落地继续修订。
+文档导航 基线版本业务、开发文档
+描述当前优先落地的基线版本：一个店铺同一时刻一个运营，订单按店铺当前合作关系进入托管、履约、结算和调整流程。
+高级版本差异文档
+描述相对基线版本的高级差异：一个店铺可按经营品类、商品或人工规则分配给多个运营，并引入责任片段、拆单编排、多运营履约和片段级内部清分。
+开发架构文档
+描述后端开发架构草案：模块化单体起步，事件驱动交互，Saga 命令消息，GraphQL &#43; DataLoader 查询聚合，PostgreSQL、Redis、Kafka、Temporal 等技术选型。架构文档放在最后，业务边界以基线版本和高级版本文档为准。
+阅读顺序 建议先读基线版本，再读高级版本差异，最后读开发架构文档。">
+
+      
+    
+	<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.esm.min.mjs';
+    
+    document.addEventListener("DOMContentLoaded", function() {
+        
+        var mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+        
+        
+        if (mermaidBlocks.length === 0) return;
+
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+
+        var nodes = [];
+        mermaidBlocks.forEach(function(block) {
+            var pre = block.parentElement;
+            if (pre && pre.tagName === 'PRE') {
+                var div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.parentNode.replaceChild(div, pre);
+                nodes.push(div);
+            }
+        });
+
+        
+        mermaid.run({
+            nodes: nodes
+        });
+    });
+</script>
+
+<style>
+     
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 2rem 0;
+        font-size: 0.95rem;
+        border: 1px solid #e5e7eb;
+    }
+    
+    thead {
+        background-color: #f3f4f6;
+    }
+    
+    th, td {
+        padding: 0.75rem 1rem;
+        text-align: left;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    th {
+        font-weight: 600;
+        color: #111827;
+        border-bottom: 2px solid #e5e7eb;
+        white-space: nowrap;
+    }
+    
+    td {
+        color: #374151;
+    }
+    
+    tr:last-child td {
+        border-bottom: none;
+    }
+    
+    tr:nth-child(even) {
+        background-color: #f9fafb;
+    }
+
+     
+    .mermaid {
+        display: flex;
+        justify-content: center;
+        margin: 2rem 0;
+        background-color: white;
+        padding: 1rem;
+        border-radius: 0.5rem;
+    }
+</style>
+
+  </head><body class="ma0 avenir bg-near-white production">
+
+    
+
+  <header>
+    <div class="pb3-m pb6-l bg-black">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        Foenye blog
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      <div class="ananke-socials"></div>
+
+    </div>
+  </div>
+</nav>
+
+      <div class="tc-l pv3 ph3 ph4-ns">
+        <h1 class="f2 f-subheadline-l fw2 light-silver mb0 lh-title">
+          天平系统集成架构文档
+        </h1>
+        
+      </div>
+    </div>
+  </header>
+
+
+    <main class="pb7" role="main">
+      
+  <article class="pa3 pa4-ns nested-copy-line-height">
+    <section class="cf ph3 ph5-l pv3 pv4-l f4 center measure-wide lh-copy mid-gray"><h1 id="天平系统集成架构文档">天平系统集成架构文档</h1>
+<blockquote>
+<p>初步草案版本。当前文档用于统一业务边界、版本差异和开发架构方向，后续仍需结合需求接口调研、原型评审和开发落地继续修订。</p></blockquote>
+<h2 id="文档导航">文档导航</h2>
+<ol>
+<li>
+<p><a href="/xshopee/original/">基线版本业务、开发文档</a></p>
+<p>描述当前优先落地的基线版本：一个店铺同一时刻一个运营，订单按店铺当前合作关系进入托管、履约、结算和调整流程。</p>
+</li>
+<li>
+<p><a href="/xshopee/advanced/">高级版本差异文档</a></p>
+<p>描述相对基线版本的高级差异：一个店铺可按经营品类、商品或人工规则分配给多个运营，并引入责任片段、拆单编排、多运营履约和片段级内部清分。</p>
+</li>
+<li>
+<p><a href="/xshopee/architecture/">开发架构文档</a></p>
+<p>描述后端开发架构草案：模块化单体起步，事件驱动交互，Saga 命令消息，GraphQL + DataLoader 查询聚合，PostgreSQL、Redis、Kafka、Temporal 等技术选型。架构文档放在最后，业务边界以基线版本和高级版本文档为准。</p>
+</li>
+</ol>
+<h2 id="阅读顺序">阅读顺序</h2>
+<p>建议先读基线版本，再读高级版本差异，最后读开发架构文档。</p>
+</section>
+  </article>
+
+    </main>
+    <footer class="bg-black bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://foenye.github.io/" >
+    &copy;  Foenye blog 2026 
+  </a>
+    <div><div class="ananke-socials"></div>
+</div>
+  </div>
+</footer>
+
+  </body>
+</html>

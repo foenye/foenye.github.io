@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>天平系统技术架构说明 | Foenye blog</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="天平系统技术架构说明
+1. 文档口径
+这份文档描述天平系统的技术架构。业务边界参阅：
+
+基线版本业务定义。
+高级版本差异定义。
+
+技术架构目标：
+
+模块间日常交互使用事件驱动架构。
+涉及多模块同时变更的流程使用 Saga 编排。
+外部接口和前端数据获取使用 GraphQL 简化聚合读取。
+领域模型落库保持简单 ID 引用，不做多表深层对象嵌套。
+GraphQL DataLoader 层负责批量加载关联数据，避免 N&#43;1 和多表嵌套查询。
+高吞吐读场景必要时引入 CQRS，使用查询文档或 KV 存储承载读模型。
+订单同步、周期任务、补偿任务可引入 Temporal，保证任务可恢复、可重试、可观测。
+
+2. 总体架构
+flowchart LR
+    A[Web / App]
+
+    subgraph Backend[后端应用编码范围]
+        B[GraphQL API]
+        I[DataLoader]
+        C[Application Service]
+        D[Domain Modules]
+        W[Temporal Workers]
+        P[Domain Events / Saga Commands]
+    end
+
+    E[(PostgreSQL)]
+    F[(Redis)]
+    G[Kafka]
+    H[Temporal]
+
+    A --&gt; B
+    B --&gt; C
+    B --&gt; I
+    C --&gt; D
+    D --&gt; P
+    P --&gt; G
+    G --&gt; P
+    W --&gt; H
+    H --&gt; W
+    D --&gt; E
+    D --&gt; F
+    I --&gt; E
+    I --&gt; F
+部署起步方式：">
+    <meta name="generator" content="Hugo 0.145.0">
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+    
+
+    
+<link rel="stylesheet" href="/ananke/css/main.min.d05fb5f317fcf33b3a52936399bdf6f47dc776516e1692e412ec7d76f4a5faa2.css" >
+
+
+
+
+    
+
+    
+      
+
+    
+
+    
+
+    
+      <link rel="canonical" href="https://foenye.github.io/xshopee/architecture/">
+    
+
+    <meta property="og:url" content="https://foenye.github.io/xshopee/architecture/">
+  <meta property="og:site_name" content="Foenye blog">
+  <meta property="og:title" content="天平系统技术架构说明">
+  <meta property="og:description" content="天平系统技术架构说明 1. 文档口径 这份文档描述天平系统的技术架构。业务边界参阅：
+基线版本业务定义。 高级版本差异定义。 技术架构目标：
+模块间日常交互使用事件驱动架构。 涉及多模块同时变更的流程使用 Saga 编排。 外部接口和前端数据获取使用 GraphQL 简化聚合读取。 领域模型落库保持简单 ID 引用，不做多表深层对象嵌套。 GraphQL DataLoader 层负责批量加载关联数据，避免 N&#43;1 和多表嵌套查询。 高吞吐读场景必要时引入 CQRS，使用查询文档或 KV 存储承载读模型。 订单同步、周期任务、补偿任务可引入 Temporal，保证任务可恢复、可重试、可观测。 2. 总体架构 flowchart LR A[Web / App] subgraph Backend[后端应用编码范围] B[GraphQL API] I[DataLoader] C[Application Service] D[Domain Modules] W[Temporal Workers] P[Domain Events / Saga Commands] end E[(PostgreSQL)] F[(Redis)] G[Kafka] H[Temporal] A --&gt; B B --&gt; C B --&gt; I C --&gt; D D --&gt; P P --&gt; G G --&gt; P W --&gt; H H --&gt; W D --&gt; E D --&gt; F I --&gt; E I --&gt; F 部署起步方式：">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="xshopee">
+    <meta property="article:published_time" content="2026-05-13T00:00:00+08:00">
+    <meta property="article:modified_time" content="2026-05-13T00:00:00+08:00">
+
+  <meta itemprop="name" content="天平系统技术架构说明">
+  <meta itemprop="description" content="天平系统技术架构说明 1. 文档口径 这份文档描述天平系统的技术架构。业务边界参阅：
+基线版本业务定义。 高级版本差异定义。 技术架构目标：
+模块间日常交互使用事件驱动架构。 涉及多模块同时变更的流程使用 Saga 编排。 外部接口和前端数据获取使用 GraphQL 简化聚合读取。 领域模型落库保持简单 ID 引用，不做多表深层对象嵌套。 GraphQL DataLoader 层负责批量加载关联数据，避免 N&#43;1 和多表嵌套查询。 高吞吐读场景必要时引入 CQRS，使用查询文档或 KV 存储承载读模型。 订单同步、周期任务、补偿任务可引入 Temporal，保证任务可恢复、可重试、可观测。 2. 总体架构 flowchart LR A[Web / App] subgraph Backend[后端应用编码范围] B[GraphQL API] I[DataLoader] C[Application Service] D[Domain Modules] W[Temporal Workers] P[Domain Events / Saga Commands] end E[(PostgreSQL)] F[(Redis)] G[Kafka] H[Temporal] A --&gt; B B --&gt; C B --&gt; I C --&gt; D D --&gt; P P --&gt; G G --&gt; P W --&gt; H H --&gt; W D --&gt; E D --&gt; F I --&gt; E I --&gt; F 部署起步方式：">
+  <meta itemprop="datePublished" content="2026-05-13T00:00:00+08:00">
+  <meta itemprop="dateModified" content="2026-05-13T00:00:00+08:00">
+  <meta itemprop="wordCount" content="742">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="天平系统技术架构说明">
+  <meta name="twitter:description" content="天平系统技术架构说明 1. 文档口径 这份文档描述天平系统的技术架构。业务边界参阅：
+基线版本业务定义。 高级版本差异定义。 技术架构目标：
+模块间日常交互使用事件驱动架构。 涉及多模块同时变更的流程使用 Saga 编排。 外部接口和前端数据获取使用 GraphQL 简化聚合读取。 领域模型落库保持简单 ID 引用，不做多表深层对象嵌套。 GraphQL DataLoader 层负责批量加载关联数据，避免 N&#43;1 和多表嵌套查询。 高吞吐读场景必要时引入 CQRS，使用查询文档或 KV 存储承载读模型。 订单同步、周期任务、补偿任务可引入 Temporal，保证任务可恢复、可重试、可观测。 2. 总体架构 flowchart LR A[Web / App] subgraph Backend[后端应用编码范围] B[GraphQL API] I[DataLoader] C[Application Service] D[Domain Modules] W[Temporal Workers] P[Domain Events / Saga Commands] end E[(PostgreSQL)] F[(Redis)] G[Kafka] H[Temporal] A --&gt; B B --&gt; C B --&gt; I C --&gt; D D --&gt; P P --&gt; G G --&gt; P W --&gt; H H --&gt; W D --&gt; E D --&gt; F I --&gt; E I --&gt; F 部署起步方式：">
+
+      
+    
+	<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.esm.min.mjs';
+    
+    document.addEventListener("DOMContentLoaded", function() {
+        
+        var mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+        
+        
+        if (mermaidBlocks.length === 0) return;
+
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+
+        var nodes = [];
+        mermaidBlocks.forEach(function(block) {
+            var pre = block.parentElement;
+            if (pre && pre.tagName === 'PRE') {
+                var div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.parentNode.replaceChild(div, pre);
+                nodes.push(div);
+            }
+        });
+
+        
+        mermaid.run({
+            nodes: nodes
+        });
+    });
+</script>
+
+<style>
+     
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 2rem 0;
+        font-size: 0.95rem;
+        border: 1px solid #e5e7eb;
+    }
+    
+    thead {
+        background-color: #f3f4f6;
+    }
+    
+    th, td {
+        padding: 0.75rem 1rem;
+        text-align: left;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    th {
+        font-weight: 600;
+        color: #111827;
+        border-bottom: 2px solid #e5e7eb;
+        white-space: nowrap;
+    }
+    
+    td {
+        color: #374151;
+    }
+    
+    tr:last-child td {
+        border-bottom: none;
+    }
+    
+    tr:nth-child(even) {
+        background-color: #f9fafb;
+    }
+
+     
+    .mermaid {
+        display: flex;
+        justify-content: center;
+        margin: 2rem 0;
+        background-color: white;
+        padding: 1rem;
+        border-radius: 0.5rem;
+    }
+</style>
+
+  </head><body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-black">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        Foenye blog
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      <div class="ananke-socials"></div>
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked ttu">
+          
+        天平系统集成架构文档
+      </aside><div id="sharing" class="mt3 ananke-socials"></div>
+<h1 class="f1 athelas mt3 mb1">天平系统技术架构说明</h1>
+      
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2026-05-13T00:00:00+08:00">May 13, 2026</time>
+      
+
+      
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><h1 id="天平系统技术架构说明">天平系统技术架构说明</h1>
+<h2 id="1-文档口径">1. 文档口径</h2>
+<p>这份文档描述天平系统的技术架构。业务边界参阅：</p>
+<ul>
+<li><a href="/xshopee/original/">基线版本业务定义</a>。</li>
+<li><a href="/xshopee/advanced/">高级版本差异定义</a>。</li>
+</ul>
+<p>技术架构目标：</p>
+<ul>
+<li>模块间日常交互使用事件驱动架构。</li>
+<li>涉及多模块同时变更的流程使用 Saga 编排。</li>
+<li>外部接口和前端数据获取使用 GraphQL 简化聚合读取。</li>
+<li>领域模型落库保持简单 ID 引用，不做多表深层对象嵌套。</li>
+<li>GraphQL DataLoader 层负责批量加载关联数据，避免 N+1 和多表嵌套查询。</li>
+<li>高吞吐读场景必要时引入 CQRS，使用查询文档或 KV 存储承载读模型。</li>
+<li>订单同步、周期任务、补偿任务可引入 Temporal，保证任务可恢复、可重试、可观测。</li>
+</ul>
+<h2 id="2-总体架构">2. 总体架构</h2>
+<pre tabindex="0"><code class="language-mermaid" data-lang="mermaid">flowchart LR
+    A[Web / App]
+
+    subgraph Backend[后端应用编码范围]
+        B[GraphQL API]
+        I[DataLoader]
+        C[Application Service]
+        D[Domain Modules]
+        W[Temporal Workers]
+        P[Domain Events / Saga Commands]
+    end
+
+    E[(PostgreSQL)]
+    F[(Redis)]
+    G[Kafka]
+    H[Temporal]
+
+    A --&gt; B
+    B --&gt; C
+    B --&gt; I
+    C --&gt; D
+    D --&gt; P
+    P --&gt; G
+    G --&gt; P
+    W --&gt; H
+    H --&gt; W
+    D --&gt; E
+    D --&gt; F
+    I --&gt; E
+    I --&gt; F
+</code></pre><p>部署起步方式：</p>
+<ul>
+<li>初期使用一个后端应用容器打包部署多个业务模块。或独立部署订单同步模块</li>
+<li>模块内部使用清晰包边界和应用服务边界。</li>
+<li>模块之间避免直接跨模块改表，优先通过命令、领域事件、查询接口交互。</li>
+<li>订单同步模块可优先独立拆分部署，因为它与 Shopee 接口、周期任务、重试、限流关系更强。</li>
+<li>后期可以按模块拆成微服务，并迁移到 Kubernetes 云原生部署。</li>
+</ul>
+<h2 id="3-推荐技术栈">3. 推荐技术栈</h2>
+<table>
+  <thead>
+      <tr>
+          <th>层次</th>
+          <th>技术</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>后端语言</td>
+          <td>Java 25</td>
+      </tr>
+      <tr>
+          <td>应用框架</td>
+          <td>Spring Boot</td>
+      </tr>
+      <tr>
+          <td>API</td>
+          <td>GraphQL</td>
+      </tr>
+      <tr>
+          <td>安全</td>
+          <td>Spring Security + JWT</td>
+      </tr>
+      <tr>
+          <td>Web 登录态</td>
+          <td>JWT Cookie</td>
+      </tr>
+      <tr>
+          <td>原生 App 登录态</td>
+          <td>Bearer Token</td>
+      </tr>
+      <tr>
+          <td>AI 能力</td>
+          <td>Spring AI</td>
+      </tr>
+      <tr>
+          <td>缓存</td>
+          <td>Redis</td>
+      </tr>
+      <tr>
+          <td>消息</td>
+          <td>Kafka</td>
+      </tr>
+      <tr>
+          <td>ORM</td>
+          <td>JPA</td>
+      </tr>
+      <tr>
+          <td>主数据库</td>
+          <td>PostgreSQL</td>
+      </tr>
+      <tr>
+          <td>工作流任务</td>
+          <td>Temporal</td>
+      </tr>
+      <tr>
+          <td>高吞吐读模型</td>
+          <td>CQRS + 文档数据库或 KV 数据库</td>
+      </tr>
+      <tr>
+          <td>部署</td>
+          <td>Docker 容器，后期 Kubernetes</td>
+      </tr>
+  </tbody>
+</table>
+<p>PostgreSQL 作为主库的原因：</p>
+<ul>
+<li>单库能力强，适合复杂业务事务和账务一致性。</li>
+<li>支持 JSON、索引、分区、物化视图等能力。</li>
+<li>支持向量扩展，未来可以承载 AI 审阅、合同风险、商品匹配等向量检索场景。</li>
+<li>相比把核心账务拆散到多个存储，PostgreSQL 更利于保证账务和审计的一致性。</li>
+</ul>
+<h2 id="4-模块边界">4. 模块边界</h2>
+<pre tabindex="0"><code class="language-mermaid" data-lang="mermaid">flowchart TD
+    A[身份与授权模块] --&gt; B[店铺合作模块]
+    B --&gt; C[合约模块]
+    A --&gt; D[订单同步模块]
+    D --&gt; E[预付保障账户模块]
+    E --&gt; F[履约发货模块]
+    F --&gt; G[结算分账模块]
+    G --&gt; H[账款调整模块]
+    H --&gt; I[账户流水模块]
+    I --&gt; J[货币与汇率模块]
+    D --&gt; K[通知任务模块]
+</code></pre><p>高级版本新增模块参阅 <a href="/xshopee/advanced/">高级版本差异定义</a>：</p>
+<ul>
+<li>店主运营合作网络。</li>
+<li>店铺商品同步。</li>
+<li>商品责任规则。</li>
+<li>订单责任路由。</li>
+<li>拆单与包裹编排。</li>
+<li>多运营履约。</li>
+<li>片段级内部清分。</li>
+<li>责任片段售后回冲。</li>
+</ul>
+<p>模块设计原则：</p>
+<ul>
+<li>每个模块拥有自己的聚合和表。</li>
+<li>聚合之间落库只保存 ID，不保存对方对象快照，除非是业务审计快照。</li>
+<li>跨模块读取通过应用查询服务、GraphQL DataLoader 或读模型完成。</li>
+<li>跨模块写入通过命令、事件或 Saga 完成。</li>
+<li>账户流水、订单历史、合约签署版本属于审计事实，不能静默覆盖。</li>
+</ul>
+<h2 id="5-事件驱动">5. 事件驱动</h2>
+<p>日常模块交互使用事件驱动。事件用于“通知事实已经发生”，不是远程函数调用。</p>
+<p>典型事件：</p>
+<table>
+  <thead>
+      <tr>
+          <th>事件</th>
+          <th>产生模块</th>
+          <th>消费模块</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><code>ShopAuthorized</code></td>
+          <td>身份与授权</td>
+          <td>店铺合作、商品同步、订单同步</td>
+      </tr>
+      <tr>
+          <td><code>ContractSigned</code></td>
+          <td>合约</td>
+          <td>店铺合作、商品责任规则</td>
+      </tr>
+      <tr>
+          <td><code>ShopeeOrderSynced</code></td>
+          <td>订单同步</td>
+          <td>预付保障账户、高级版本责任路由</td>
+      </tr>
+      <tr>
+          <td><code>PrepayProtectionLocked</code></td>
+          <td>预付保障账户</td>
+          <td>履约发货</td>
+      </tr>
+      <tr>
+          <td><code>FulfillmentCompleted</code></td>
+          <td>履约发货</td>
+          <td>结算分账</td>
+      </tr>
+      <tr>
+          <td><code>EscrowDetailSynced</code></td>
+          <td>结算同步</td>
+          <td>结算分账</td>
+      </tr>
+      <tr>
+          <td><code>SettlementCompleted</code></td>
+          <td>结算分账</td>
+          <td>账户流水、排行榜读模型</td>
+      </tr>
+      <tr>
+          <td><code>ShopeeAdjustmentSynced</code></td>
+          <td>账款调整</td>
+          <td>账户流水、通知任务</td>
+      </tr>
+      <tr>
+          <td><code>AccountLedgerWritten</code></td>
+          <td>账户流水</td>
+          <td>对账、排行、经营看板</td>
+      </tr>
+  </tbody>
+</table>
+<p>事件处理规则：</p>
+<ul>
+<li>事件必须有全局唯一 <code>event_id</code>。</li>
+<li>消费端按 <code>event_id</code> 或业务幂等键去重。</li>
+<li>事件负载只放必要字段和业务 ID，不传完整聚合对象。</li>
+<li>消费失败进入重试队列，超过阈值进入人工任务。</li>
+<li>事件只代表事实，不直接承诺下游一定成功。</li>
+</ul>
+<h2 id="6-saga-和命令消息">6. Saga 和命令消息</h2>
+<p>涉及多个模块同时变更的流程不能用单个数据库事务硬包所有模块，应使用 Saga。</p>
+<p>典型 Saga：</p>
+<h3 id="61-订单可发货-saga">6.1 订单可发货 Saga</h3>
+<pre tabindex="0"><code class="language-mermaid" data-lang="mermaid">sequenceDiagram
+    participant Order as 订单同步
+    participant Saga as Saga 编排器
+    participant Account as 预付保障账户
+    participant Fulfillment as 履约发货
+    participant Notify as 通知任务
+
+    Order-&gt;&gt;Saga: ShopeeOrderSynced(order_id)
+    Saga-&gt;&gt;Account: LockPrepayProtection(order_id)
+    Account--&gt;&gt;Saga: PrepayProtectionLocked
+    Saga-&gt;&gt;Fulfillment: CreateFulfillmentTask(order_id)
+    Fulfillment--&gt;&gt;Saga: FulfillmentTaskCreated
+    Saga-&gt;&gt;Notify: NotifyOperatorCanShip(order_id)
+</code></pre><p>失败补偿：</p>
+<ul>
+<li>预付保障失败：记录失败状态，通知店主充值，不创建发货任务。</li>
+<li>发货任务创建失败：保留保障锁定，创建补偿任务重试。</li>
+<li>通知失败：不回滚业务，只重试通知。</li>
+</ul>
+<h3 id="62-结算分账-saga">6.2 结算分账 Saga</h3>
+<pre tabindex="0"><code class="language-mermaid" data-lang="mermaid">sequenceDiagram
+    participant Settlement as 结算分账
+    participant Saga as Saga 编排器
+    participant Account as 账户流水
+    participant Notify as 通知任务
+
+    Settlement-&gt;&gt;Saga: EscrowDetailReady(order_id)
+    Saga-&gt;&gt;Settlement: CalculateSettlement(order_id)
+    Settlement--&gt;&gt;Saga: SettlementCalculated
+    Saga-&gt;&gt;Account: WriteSettlementLedgers(settlement_id)
+    Account--&gt;&gt;Saga: LedgersWritten
+    Saga-&gt;&gt;Settlement: MarkSettlementCompleted(settlement_id)
+    Saga-&gt;&gt;Notify: NotifySettlementCompleted(settlement_id)
+</code></pre><p>失败补偿：</p>
+<ul>
+<li>账户流水写入失败：结算单保持 <code>PENDING_LEDGER</code>，重试写账。</li>
+<li>通知失败：不影响结算完成。</li>
+<li>已写流水不能删除，只能通过调整流水补正。</li>
+</ul>
+<p>命令消息规则：</p>
+<ul>
+<li>命令表达“要求某模块做一件事”，例如 <code>LockPrepayProtection</code>。</li>
+<li>事件表达“某件事已经发生”，例如 <code>PrepayProtectionLocked</code>。</li>
+<li>命令必须有业务幂等键。</li>
+<li>命令处理结果必须明确成功、失败、可重试、需人工。</li>
+</ul>
+<h2 id="7-graphql-查询架构">7. GraphQL 查询架构</h2>
+<p>GraphQL 用于简化前端和 App 的数据获取，不用于突破领域边界。</p>
+<p>使用方式：</p>
+<ul>
+<li>前端按页面需要声明字段。</li>
+<li>GraphQL Resolver 调用应用查询服务。</li>
+<li>Resolver 不直接拼复杂跨模块 SQL。</li>
+<li>DataLoader 按 ID 批量加载关联对象。</li>
+<li>聚合落库保持简单 ID 引用。</li>
+</ul>
+<p>示例：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-graphql" data-lang="graphql"><span style="display:flex;"><span><span style="color:#75715e"># noinspection GraphQLUnresolvedReference</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">query</span> <span style="color:#a6e22e">OrderDetail</span>($orderId: <span style="color:#a6e22e">ID</span>!) {
+</span></span><span style="display:flex;"><span>    order(id: $orderId) {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">id</span>
+</span></span><span style="display:flex;"><span>        orderSn
+</span></span><span style="display:flex;"><span>        status
+</span></span><span style="display:flex;"><span>        shop {
+</span></span><span style="display:flex;"><span>            id
+</span></span><span style="display:flex;"><span>            name
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        fulfillmentTask {
+</span></span><span style="display:flex;"><span>            id
+</span></span><span style="display:flex;"><span>            status
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        settlement {
+</span></span><span style="display:flex;"><span>            id
+</span></span><span style="display:flex;"><span>            status
+</span></span><span style="display:flex;"><span>            escrowAmount
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>后端处理方式：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>OrderResolver 读取 Order
+</span></span><span style="display:flex;"><span>ShopDataLoader 批量按 shop_id 读取 Shop
+</span></span><span style="display:flex;"><span>FulfillmentTaskDataLoader 批量按 order_id 读取任务
+</span></span><span style="display:flex;"><span>SettlementDataLoader 批量按 order_id 读取结算
+</span></span></code></pre></div><p>这样避免：</p>
+<ul>
+<li>JPA 多层 eager loading。</li>
+<li>多表深层 join。</li>
+<li>GraphQL N+1 查询。</li>
+<li>聚合之间互相持有复杂对象。</li>
+</ul>
+<h2 id="8-聚合落库方式">8. 聚合落库方式</h2>
+<p>聚合表只保存自己的状态和外部聚合 ID。</p>
+<p>示例：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>orders
+</span></span><span style="display:flex;"><span>- id
+</span></span><span style="display:flex;"><span>- shop_id
+</span></span><span style="display:flex;"><span>- shopkeeper_id
+</span></span><span style="display:flex;"><span>- operator_id
+</span></span><span style="display:flex;"><span>- status
+</span></span><span style="display:flex;"><span>- contract_snapshot_id
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>fulfillment_tasks
+</span></span><span style="display:flex;"><span>- id
+</span></span><span style="display:flex;"><span>- order_id
+</span></span><span style="display:flex;"><span>- operator_id
+</span></span><span style="display:flex;"><span>- package_number
+</span></span><span style="display:flex;"><span>- status
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>settlements
+</span></span><span style="display:flex;"><span>- id
+</span></span><span style="display:flex;"><span>- order_id
+</span></span><span style="display:flex;"><span>- escrow_amount
+</span></span><span style="display:flex;"><span>- status
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>account_ledgers
+</span></span><span style="display:flex;"><span>- id
+</span></span><span style="display:flex;"><span>- account_id
+</span></span><span style="display:flex;"><span>- order_id
+</span></span><span style="display:flex;"><span>- business_no
+</span></span><span style="display:flex;"><span>- amount
+</span></span></code></pre></div><p>不建议：</p>
+<ul>
+<li>在订单表里嵌入店铺完整对象。</li>
+<li>在结算表里嵌入账户完整对象。</li>
+<li>用 ORM 级联保存多个业务聚合。</li>
+<li>为了页面展示做复杂实体图加载。</li>
+</ul>
+<p>建议：</p>
+<ul>
+<li>写入路径保持聚合简单。</li>
+<li>查询路径用 GraphQL + DataLoader + 查询服务组装。</li>
+<li>高吞吐页面用 CQRS 读模型。</li>
+</ul>
+<h2 id="9-cqrs-读模型">9. CQRS 读模型</h2>
+<p>以下场景可以引入 CQRS：</p>
+<ul>
+<li>店主首页经营看板。</li>
+<li>运营待办任务列表。</li>
+<li>订单搜索和筛选。</li>
+<li>结算对账列表。</li>
+<li>排行榜。</li>
+<li>多运营高级版本的责任片段视图。</li>
+</ul>
+<p>实现方式：</p>
+<ul>
+<li>写模型仍在 PostgreSQL。</li>
+<li>领域事件写出后，异步更新读模型。</li>
+<li>读模型可以放 PostgreSQL 物化表、Redis、文档数据库或 KV 数据库。</li>
+<li>读模型允许最终一致。</li>
+<li>账务事实仍以账户流水和结算主表为准。</li>
+</ul>
+<pre tabindex="0"><code class="language-mermaid" data-lang="mermaid">flowchart LR
+    A[领域写模型] --&gt; B[领域事件]
+    B --&gt; C[读模型投影器]
+    C --&gt; D[(查询文档/KV/物化表)]
+    D --&gt; E[GraphQL Query]
+</code></pre><h2 id="10-temporal-任务编排">10. Temporal 任务编排</h2>
+<p>订单同步、周期任务和补偿任务可以引入 Temporal。</p>
+<p>适合 Temporal 的场景：</p>
+<ul>
+<li>Shopee 订单周期同步。</li>
+<li>Shopee 商品同步。</li>
+<li>token 刷新和重新授权提醒。</li>
+<li>已完成未结算订单轮询 escrow。</li>
+<li>失败事件重试。</li>
+<li>长时间售后状态跟踪。</li>
+<li>结算分账 Saga。</li>
+<li>预付款不足后的周期提醒。</li>
+</ul>
+<p>Temporal 使用原则：</p>
+<ul>
+<li>工作流保存长时间任务状态。</li>
+<li>Activity 调用 Shopee、数据库、Kafka 等外部系统。</li>
+<li>Activity 必须幂等。</li>
+<li>工作流失败后可恢复，不依赖单机内存。</li>
+<li>重要任务要有可观测状态和人工介入入口。</li>
+</ul>
+<p>订单同步可以优先拆为独立部署单元：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>order-sync-service
+</span></span><span style="display:flex;"><span>- Shopee 推送接收
+</span></span><span style="display:flex;"><span>- Shopee 周期同步
+</span></span><span style="display:flex;"><span>- 商品同步
+</span></span><span style="display:flex;"><span>- escrow 轮询
+</span></span><span style="display:flex;"><span>- Temporal workers
+</span></span><span style="display:flex;"><span>- Kafka producers
+</span></span></code></pre></div><h2 id="11-redis-使用">11. Redis 使用</h2>
+<p>Redis 用于性能和短期状态，不作为账务真相。</p>
+<p>适合放 Redis：</p>
+<ul>
+<li>登录会话黑名单或 token 版本号。</li>
+<li>验证码。</li>
+<li>Shopee API 限流计数。</li>
+<li>热点字典和配置缓存。</li>
+<li>GraphQL DataLoader 请求级缓存。</li>
+<li>短期任务去重标记。</li>
+</ul>
+<p>不适合只放 Redis：</p>
+<ul>
+<li>账户余额真相。</li>
+<li>账户流水。</li>
+<li>结算单。</li>
+<li>合约签署版本。</li>
+<li>订单历史。</li>
+</ul>
+<h2 id="12-安全架构">12. 安全架构</h2>
+<p>认证：</p>
+<ul>
+<li>Web 使用 JWT Cookie。</li>
+<li>原生 App 使用 Bearer Token。</li>
+<li>管理端、店主端、运营端统一用户体系。</li>
+</ul>
+<p>授权：</p>
+<ul>
+<li>使用 Spring Security 做认证和接口权限。</li>
+<li>业务权限仍由领域服务判断，例如店主只能看自己的店铺，运营只能看自己的任务或责任片段。</li>
+<li>Shopee token 只允许服务端授权适配层读取。</li>
+<li>日志、审计、异常堆栈、消息 payload 禁止输出 Shopee token 原文。</li>
+</ul>
+<h2 id="13-弹性和高性能">13. 弹性和高性能</h2>
+<p>弹性策略：</p>
+<ul>
+<li>Shopee API 调用加超时、重试、限流和熔断。</li>
+<li>Kafka 消费端幂等处理。</li>
+<li>Temporal 任务可恢复。</li>
+<li>失败事件进入人工任务。</li>
+<li>账户写入使用行级锁和幂等键。</li>
+</ul>
+<p>高性能策略：</p>
+<ul>
+<li>写路径按聚合单表写入，避免大事务跨模块。</li>
+<li>读路径用 GraphQL DataLoader 批量加载。</li>
+<li>热点查询使用 CQRS 读模型。</li>
+<li>大表如账户流水、订单历史按时间或店铺分区。</li>
+<li>Kafka 削峰，异步处理非阻塞任务。</li>
+<li>PostgreSQL 对关键字段建索引：<code>shop_id</code>、<code>order_sn</code>、<code>business_no</code>、<code>account_id</code>、<code>created_at</code>、<code>idempotency_key</code>。</li>
+</ul>
+<h2 id="14-部署演进">14. 部署演进</h2>
+<p>第一阶段：模块化单体</p>
+<ul>
+<li>一个 Spring Boot 应用。</li>
+<li>一个 PostgreSQL 主库。</li>
+<li>Redis + Kafka。</li>
+<li>Temporal 可按订单任务复杂度选择引入。</li>
+<li>Docker 容器化部署。</li>
+</ul>
+<p>第二阶段：重点模块拆分</p>
+<ul>
+<li>订单同步模块单独部署。</li>
+<li>Temporal Worker 单独部署。</li>
+<li>GraphQL API 保持统一入口。</li>
+<li>Kafka 连接各模块。</li>
+</ul>
+<p>第三阶段：云原生微服务</p>
+<ul>
+<li>按模块拆服务。</li>
+<li>Kubernetes 部署。</li>
+<li>每个服务独立扩缩容。</li>
+<li>保持事件契约和 GraphQL 查询聚合能力。</li>
+</ul>
+<h2 id="15-落地优先级">15. 落地优先级</h2>
+<ol>
+<li>建立模块化单体包结构和统一账户流水模型。</li>
+<li>建立 PostgreSQL 表结构、幂等键、审计字段。</li>
+<li>建立 GraphQL API 和 DataLoader 规范。</li>
+<li>建立 Kafka 事件规范。</li>
+<li>建立订单同步和 Shopee 推送处理。</li>
+<li>建立预付保障账户或当前命名下的资金保障流程。</li>
+<li>建立结算分账 Saga。</li>
+<li>引入 Temporal 处理订单同步、escrow 轮询、补偿任务。</li>
+<li>对首页、订单列表、排行榜引入 CQRS 读模型。</li>
+</ol>
+<h2 id="继续查看">继续查看</h2>
+<ul>
+<li><a href="/xshopee/original/">基线版本</a></li>
+<li><a href="/xshopee/advanced/">高级版本差异</a></li>
+</ul>
+<ul class="pa0">
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-black bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://foenye.github.io/" >
+    &copy;  Foenye blog 2026 
+  </a>
+    <div><div class="ananke-socials"></div>
+</div>
+  </div>
+</footer>
+
+  </body>
+</html>
